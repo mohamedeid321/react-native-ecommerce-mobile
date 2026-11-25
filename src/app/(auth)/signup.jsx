@@ -1,149 +1,145 @@
+import React, { useState } from "react";
 import {
-  View,
   Text,
-  Platform,
-  KeyboardAvoidingView,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  View,
+  Image,
 } from "react-native";
-import styles from "../../assets/styles/signup.styles";
-import { Ionicons } from "@expo/vector-icons";
-import COLORS from "../../constants/colors";
-import { useState } from "react";
 import { useRouter } from "expo-router";
+import styles from "../../assets/styles/auth.styles";
+import COLORS from "../../constants/colors";
 import { useAuthStore } from "../../store/authStore";
+import AuthScreen from "../../components/auth/AuthScreen";
+import AuthField from "../../components/auth/AuthField";
+import { markWelcomeSeen } from "../../utils/welcome";
+import {
+  normalizeEmail,
+  validateEmail,
+  validatePassword,
+  validateUsername,
+  translateAuthError,
+} from "../../utils/validation";
 
+// تحكم في الشكل من هنا:
+const TOP_PADDING = 56; // المسافة من فوق لحد كلمة "إنشاء حساب جديد" (بتحرك كل العناصر)
+const IMAGE_WIDTH = "100%"; // عرض الصورة اللي تحت
+const IMAGE_HEIGHT = 300; // ارتفاع الصورة اللي تحت
+
+// إنشاء حساب (عربي، من اليمين للشمال) — الإيميل لازم يكون فيه @ وشكله حقيقي
 export default function Signup() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState({});
+  const { isLoading, register } = useAuthStore();
 
-  const { user, isLoading, register, token } = useAuthStore();
-
-  const router = useRouter();
+  const errors = {
+    username: validateUsername(username),
+    email: validateEmail(email),
+    password: validatePassword(password),
+  };
+  const show = (field) => (touched[field] ? errors[field] : null);
+  const touch = (field) => setTouched((t) => ({ ...t, [field]: true }));
 
   const handleSignUp = async () => {
-    const result = await register(username, email, password);
+    setTouched({ username: true, email: true, password: true });
+    if (errors.username || errors.email || errors.password) return;
 
-    if (!result.success) Alert.alert("Error", result.error);
+    const result = await register(
+      username.trim(),
+      normalizeEmail(email),
+      password,
+    );
+    if (!result.success) {
+      Alert.alert("تعذر إنشاء الحساب", translateAuthError(result.error));
+      return;
+    }
+    markWelcomeSeen();
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <AuthScreen
+      title="إنشاء حساب جديد"
+      subtitle="انضم للقطة واطلب فواكهك وخضارك بأسعار لقطة"
+      topPadding={TOP_PADDING}
     >
-      <View style={styles.container}>
-        <View style={styles.card}>
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Mohamed Eid 🛒</Text>
-            <Text style={styles.subtitle}>
-              Explore Performance Shopping Store
-            </Text>
-          </View>
+      <AuthField
+        label="الاسم"
+        icon="person-outline"
+        placeholder="اكتب اسمك هنا"
+        value={username}
+        onChangeText={setUsername}
+        onBlur={() => touch("username")}
+        error={show("username")}
+        autoCapitalize="words"
+        autoComplete="name"
+        returnKeyType="next"
+      />
 
-          <View style={styles.formContainer}>
-            {/* USERNAME INPUT */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Username</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Your Name"
-                  placeholderTextColor={COLORS.placeholderText}
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
+      <AuthField
+        label="البريد الإلكتروني"
+        icon="mail-outline"
+        placeholder="email@gmail.com"
+        value={email}
+        onChangeText={setEmail}
+        onBlur={() => touch("email")}
+        error={show("email")}
+        keyboardType="email-address"
+        autoComplete="email"
+        returnKeyType="next"
+      />
 
-            {/* EMAIL INPUT */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="mail-outline"
-                  size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="You@gmail.com"
-                  value={email}
-                  placeholderTextColor={COLORS.placeholderText}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
+      <AuthField
+        label="كلمة المرور"
+        icon="lock-closed-outline"
+        placeholder="6 أحرف على الأقل"
+        value={password}
+        onChangeText={setPassword}
+        onBlur={() => touch("password")}
+        error={show("password")}
+        secure
+        autoComplete="new-password"
+        returnKeyType="done"
+        onSubmitEditing={handleSignUp}
+      />
 
-            {/* PASSWORD INPUT */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="******"
-                  placeholderTextColor={COLORS.placeholderText}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color={COLORS.primary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
+      <TouchableOpacity
+        style={[styles.button, isLoading && { opacity: 0.7 }]}
+        onPress={handleSignUp}
+        disabled={isLoading}
+        activeOpacity={0.85}
+      >
+        {isLoading ? (
+          <ActivityIndicator color={COLORS.white} />
+        ) : (
+          <Text style={styles.buttonText}>إنشاء حساب</Text>
+        )}
+      </TouchableOpacity>
 
-            {/* SIGNUP BUTTON */}
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleSignUp}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Sign Up</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* FOOTER */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account?</Text>
-              <TouchableOpacity onPress={() => router.back()}>
-                <Text style={styles.link}>Login</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>لديك حساب بالفعل؟</Text>
+        <TouchableOpacity
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/")
+          }
+        >
+          <Text style={styles.link}>تسجيل الدخول</Text>
+        </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+
+      <Image
+        source={require("../../assets/images/signup-image.png")}
+        style={{
+          width: IMAGE_WIDTH,
+          height: IMAGE_HEIGHT,
+          alignSelf: "center",
+          marginTop: 24,
+        }}
+        resizeMode="contain"
+      />
+    </AuthScreen>
   );
 }

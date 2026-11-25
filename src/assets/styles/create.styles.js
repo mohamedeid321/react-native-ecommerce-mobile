@@ -35,25 +35,28 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-  },
-  form: {
-    marginBottom: 16,
-  },
   formGroup: {
     marginBottom: 20,
+  },
+  // صفين جنب بعض (السعر والخصم / الوحدة والمخزون)، الأول على اليمين
+  rowGroup: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  half: {
+    flex: 1,
   },
   label: {
     fontSize: 14,
     marginBottom: 8,
     color: COLORS.textPrimary,
     fontWeight: "500",
+    textAlign: "right",
   },
+  // الأيقونة على اليمين والكتابة بتبدأ من اليمين
   inputContainer: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     backgroundColor: COLORS.inputBackground,
     borderRadius: 12,
@@ -62,33 +65,53 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   inputIcon: {
-    marginRight: 10,
+    marginLeft: 10,
   },
   input: {
     flex: 1,
     height: 48,
     color: COLORS.textDark,
+    textAlign: "right",
   },
   textArea: {
+    flex: 1,
     verticalAlign: "top",
-    width: "100%",
     textAlignVertical: "top",
+    textAlign: "right",
     padding: 12,
     height: 100,
     color: COLORS.textDark,
   },
-  ratingContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
+  pickerWrapper: {
     backgroundColor: COLORS.inputBackground,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
-    padding: 8,
+    overflow: "hidden",
   },
-  starButton: {
-    padding: 8,
+  picker: {
+    color: COLORS.textDark,
+  },
+  // معاينة السعر بعد الخصم
+  previewBox: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 20,
+  },
+  previewLabel: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontWeight: "500",
+  },
+  previewValue: {
+    fontSize: 16,
+    color: COLORS.primary,
+    fontWeight: "800",
   },
   imagePicker: {
     width: "100%",
@@ -108,6 +131,12 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
+  },
+  hint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: "right",
+    marginTop: 6,
   },
   placeholderText: {
     color: COLORS.textSecondary,
@@ -133,7 +162,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   buttonIcon: {
-    marginRight: 8,
+    marginLeft: 8,
   },
 });
 

@@ -1,133 +1,112 @@
+import React, { useState } from "react";
 import {
-  View,
   Text,
-  Image,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
+  View,
 } from "react-native";
-import { Link } from "expo-router";
-import styles from "../../assets/styles/login.style";
-import { useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import styles from "../../assets/styles/auth.styles";
 import COLORS from "../../constants/colors";
-
 import { useAuthStore } from "../../store/authStore";
+import AuthScreen from "../../components/auth/AuthScreen";
+import AuthField from "../../components/auth/AuthField";
+import { markWelcomeSeen } from "../../utils/welcome";
+import {
+  normalizeEmail,
+  validateEmail,
+  validatePassword,
+  translateAuthError,
+} from "../../utils/validation";
 
+// حجم الصورة: غيّر الرقمين دول بس (العرض والارتفاع)
+const IMAGE_WIDTH = "100%";
+const IMAGE_HEIGHT = 300;
+
+// تسجيل الدخول (عربي، من اليمين للشمال)
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState({});
   const { isLoading, login, isCheckingAuth } = useAuthStore();
 
-  const handleLogin = async () => {
-    const result = await login(email, password);
+  const errors = {
+    email: validateEmail(email),
+    // في الدخول مش بنفرض طول معين، بس لازم تكون مكتوبة
+    password: password ? null : "اكتب كلمة المرور",
+  };
+  const show = (field) => (touched[field] ? errors[field] : null);
+  const touch = (field) => setTouched((t) => ({ ...t, [field]: true }));
 
-    if (!result.success) Alert.alert("Error", result.error);
+  const handleLogin = async () => {
+    setTouched({ email: true, password: true });
+    if (errors.email || errors.password) return;
+
+    const result = await login(normalizeEmail(email), password);
+    if (!result.success) {
+      Alert.alert("تعذر تسجيل الدخول", translateAuthError(result.error));
+      return;
+    }
+    markWelcomeSeen();
   };
 
   if (isCheckingAuth) return null;
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <AuthScreen
+      title="خش الحق الكميه هتخلص"
+      subtitle="سجّل دخولك والحق العروض وألقطها بسرعة"
+      illustration={require("../../assets/images/auth-image.png")}
+      illustrationStyle={{ width: IMAGE_WIDTH, height: IMAGE_HEIGHT }}
     >
-      <View style={styles.container}>
-        {/* ILLUSTRATION */}
-        <View style={styles.topIllustration}>
-          <Image
-            source={require("../../assets/images/Shopping.png")}
-            style={styles.illustrationImage}
-            resizeMode="contain"
-          />
-        </View>
+      <AuthField
+        label="البريد الإلكتروني"
+        icon="mail-outline"
+        placeholder="eamil@gmail.com"
+        value={email}
+        onChangeText={setEmail}
+        onBlur={() => touch("email")}
+        error={show("email")}
+        keyboardType="email-address"
+        autoComplete="email"
+        returnKeyType="next"
+      />
 
-        <View style={styles.card}>
-          <View style={styles.formContainer}>
-            {/* EMAIL */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="mail-outline"
-                  size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email"
-                  placeholderTextColor={COLORS.placeholderText}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
+      <AuthField
+        label="كلمة المرور"
+        icon="lock-closed-outline"
+        placeholder="اكتب كلمة المرور"
+        value={password}
+        onChangeText={setPassword}
+        onBlur={() => touch("password")}
+        error={show("password")}
+        secure
+        autoComplete="password"
+        returnKeyType="done"
+        onSubmitEditing={handleLogin}
+      />
 
-            {/* PASSWORD */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputContainer}>
-                {/* LEFT ICON */}
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
-                />
-                {/* INPUT */}
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your password"
-                  placeholderTextColor={COLORS.placeholderText}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
+      <TouchableOpacity
+        style={[styles.button, isLoading && { opacity: 0.7 }]}
+        onPress={handleLogin}
+        disabled={isLoading}
+        activeOpacity={0.85}
+      >
+        {isLoading ? (
+          <ActivityIndicator color={COLORS.white} />
+        ) : (
+          <Text style={styles.buttonText}>تسجيل الدخول</Text>
+        )}
+      </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color={COLORS.primary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Login</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* FOOTER */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account?</Text>
-              <Link href="/signup" asChild>
-                <TouchableOpacity>
-                  <Text style={styles.link}>Sign Up</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
-          </View>
-        </View>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>ليس لديك حساب؟</Text>
+        <TouchableOpacity onPress={() => router.push("/signup")}>
+          <Text style={styles.link}>إنشاء حساب</Text>
+        </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </AuthScreen>
   );
 }
